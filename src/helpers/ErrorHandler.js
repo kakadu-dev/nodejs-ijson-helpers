@@ -20,9 +20,9 @@ class ErrorHandler
 
 				return { message, path, value };
 			});
-
-			throw error;
 		}
+
+		throw error;
 	};
 };
 
