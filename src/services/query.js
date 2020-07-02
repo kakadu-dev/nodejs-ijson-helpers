@@ -168,11 +168,11 @@ class JsonQuery
 					includes.push(expand);
 					break;
 				case 'object':
-					const { name, where, required, limit, separate, order, attributes } = expand;
+					const { name, modelName, where, required, limit, separate, order, attributes } = expand;
 
-					if (name && models[name]) {
+					if (name && (models[name] || models[modelName])) {
 						includes.push({
-							model: models[name],
+							model: models[modelName] || models[name],
 							as:    name,
 							...(typeof required === 'boolean' ? { required } : {}),
 							...(typeof limit === 'number' ? { limit } : {}),
