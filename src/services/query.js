@@ -115,7 +115,7 @@ class JsonQuery
 	 */
 	getOrderBy(field)
 	{
-		return (field || this.orderBy).map(query => {
+		return (field || this.orderBy).filter(s => typeof s === 'string' && s !== '').map(query => {
 			return query.substr(0, 1) === '-'
 				   ? [query.substr(1), 'DESC']
 				   : [query, 'ASC'];
