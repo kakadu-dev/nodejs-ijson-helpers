@@ -1,6 +1,6 @@
 {
     "name": "@kakadu-dev/nodejs-ijson-helpers",
-    "version": "1.8.4",
+    "version": "1.8.5",
     "description": "NodeJS Inverted Json microservices helpers",
     "main": "index.js",
     "keywords": [
