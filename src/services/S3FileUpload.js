@@ -83,9 +83,9 @@ class S3FileUpload
 	 *
 	 * @param {Object} fileObj
 	 * @param {string} destPath without begin and end slashes
-	 * @param {string} fileName if not passet, generate automatically
+	 * @param {string} fileName if not passed, generate automatically
 	 *
-	 * @return {Promise<Object|Boolean>}
+	 * @return {Promise<string|boolean>}
 	 */
 	async save(fileObj, destPath = '', fileName = null)
 	{
@@ -124,7 +124,7 @@ class S3FileUpload
 			ContentType:     type,
 		}).promise();
 
-		return (result?.ETag?.length ?? 0) > 0 ? result : false;
+		return (result?.ETag?.length ?? 0) > 0 ? destinationName : false;
 	}
 
 	/**
