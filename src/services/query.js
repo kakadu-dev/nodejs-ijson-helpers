@@ -115,10 +115,24 @@ class JsonQuery
 	 */
 	getOrderBy(field)
 	{
+		const models = this.models();
 		return (field || this.orderBy).filter(s => typeof s === 'string' && s !== '').map(query => {
-			return query.substr(0, 1) === '-'
-				   ? [query.substr(1), 'DESC']
-				   : [query, 'ASC'];
+			const directionDesc   = query.substr(0, 1) === '-'
+			const isRelatedColumn = query.includes('$')
+			const orderQuery      = _.trim(query, '$-')
+			const orderSplit      = orderQuery.split('.')
+			const column          = orderSplit?.[1] ?? orderSplit[0] ?? ''
+			const relation        = models[orderSplit?.[0]] ?? null
+
+			const result = directionDesc
+						   ? [column, 'DESC']
+						   : [column, 'ASC'];
+
+			if (isRelatedColumn && relation) {
+				result.unshift({ model: relation, as: orderSplit[0] })
+			}
+
+			return result
 		});
 	}
 
