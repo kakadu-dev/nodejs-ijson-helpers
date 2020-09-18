@@ -1,3 +1,6 @@
+const dns = require('dns');
+const _   = require('lodash');
+
 /**
  * BaseConnection class
  */
@@ -43,7 +46,8 @@ class BaseConnection
 			return false;
 		}
 
-		const connection = this.getInstance(config);
+		const handledConfig = await BaseConnection.handleSRV(config);
+		const connection    = this.getInstance(handledConfig);
 
 		await connection.checkDatabaseExist();
 
@@ -82,6 +86,110 @@ class BaseConnection
 				}
 			},
 		};
+	}
+
+	/**
+	 * Handle host srv record
+	 *
+	 * @param {Object} config
+	 *
+	 * @return {Promise<Object>}
+	 */
+	static async handleSRV(config) {
+		const { host, port, slaveHost, ...newConfig } = config;
+
+		const replication = {
+			read:  [],
+			write: null,
+		};
+
+		if (slaveHost) {
+			// Simple read replicas host(s)
+			if (!slaveHost.endsWith('.srv')) {
+				slaveHost.split(',').forEach(h => {
+					const [
+							  replicaCredentials,
+							  replicaHostAndPort,
+						  ] = h.split('@');
+					const [
+							  replicaHost,
+							  replicaPort,
+						  ] = (replicaHostAndPort || replicaCredentials).split(':');
+					const [
+							  replicaUsername,
+							  replicaPassword,
+						  ] = (replicaCredentials || '').split(':');
+
+					replication.read.push({
+						host: replicaHost,
+						...(replicaPort ? { port: replicaPort } : {}),
+						...(replicaUsername ? { username: replicaUsername } : {}),
+						...(replicaPassword ? { password: replicaPassword } : {}),
+					});
+				});
+			} else {
+				// Add replicas from srv record
+				const slaves = await BaseConnection._resolveSrv(slaveHost);
+				slaves.forEach(address => {
+					replication.read.push({
+						host: address.name,
+						port: address.port,
+					});
+				});
+			}
+		}
+
+		if (!host.endsWith('.srv')) {
+			if (!slaveHost) {
+				return config;
+			}
+
+			replication.write = {
+				host,
+				port,
+			};
+			return {
+				...newConfig,
+				replication,
+			};
+		}
+
+		const masters = await BaseConnection._resolveSrv(host);
+		const master  = masters.shift();
+
+		replication.write = {
+			host: master.name,
+			port: master.port,
+		};
+
+		return {
+			...newConfig,
+			replication,
+		};
+	}
+
+	/**
+	 * Resolve SRV records
+	 *
+	 * @param {string} srv
+	 *
+	 * @return {Promise<[]>}
+	 * @private
+	 */
+	static _resolveSrv(srv) {
+		if (!srv?.length) {
+			return [];
+		}
+
+		return new Promise((resolve, reject) => {
+			dns.resolveSrv(srv, (err, addresses) => {
+				if (err) {
+					return reject(err);
+				}
+
+				resolve(_.sortBy(addresses, ['priority', 'weight']));
+			});
+		});
 	}
 
 	/**
