@@ -98,6 +98,10 @@ class BaseConnection
 	static async handleSRV(config) {
 		const { host, port, slaveHost, ...newConfig } = config;
 
+		if (!host) {
+			return config;
+		}
+
 		const replication = {
 			read:  [],
 			write: null,
@@ -182,7 +186,7 @@ class BaseConnection
 		}
 
 		return new Promise((resolve, reject) => {
-			dns.resolveSrv(srv.replace(/.srv$/, ''), (err, addresses) => {
+			dns.resolveSrv(srv.replace(/\.srv$/, ''), (err, addresses) => {
 				if (err) {
 					return reject(err);
 				}
