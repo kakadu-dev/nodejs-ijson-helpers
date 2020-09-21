@@ -182,7 +182,7 @@ class BaseConnection
 		}
 
 		return new Promise((resolve, reject) => {
-			dns.resolveSrv(srv, (err, addresses) => {
+			dns.resolveSrv(srv.replace(/.srv$/, ''), (err, addresses) => {
 				if (err) {
 					return reject(err);
 				}
